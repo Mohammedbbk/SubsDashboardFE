@@ -25,6 +25,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import SaudiRiyalIcon from "@/assets/SaudiRiyal.svg";
 
 interface SubscriptionTableProps {
   subscriptions: Subscription[];
@@ -45,6 +62,13 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
 }) => {
   const [subToDelete, setSubToDelete] = useState<Subscription | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [subToUpdate, setSubToUpdate] = useState<Subscription | null>(null);
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+  const [updateCost, setUpdateCost] = useState<string>("");
+  const [updateCycle, setUpdateCycle] = useState<"monthly" | "annually">("monthly");
+  const [historySub, setHistorySub] = useState<Subscription | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
 
   const handleDeleteClick = (subscription: Subscription) => {
     setSubToDelete(subscription);
@@ -65,6 +89,40 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
       toast.error("Failed to delete subscription. Please try again.");
       setIsConfirmOpen(false);
       setSubToDelete(null);
+    }
+  };
+
+  const handleUpdateOpen = (sub: Subscription) => {
+    setSubToUpdate(sub);
+    setUpdateCost(sub.cost.toString());
+    setUpdateCycle(sub.billing_cycle as "monthly" | "annually");
+    setIsUpdateOpen(true);
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subToUpdate) return;
+    try {
+      await apiClient.post(
+        `/subscriptions/${subToUpdate.id}/update-price/`,
+        { cost: parseFloat(updateCost), billing_cycle: updateCycle }
+      );
+      toast.success("Price updated successfully!");
+      refreshData();
+      setIsUpdateOpen(false);
+    } catch (err: any) {
+      toast.error(err.response?.data || "Failed to update price.");
+    }
+  };
+
+  const handleHistoryOpen = async (sub: Subscription) => {
+    setHistorySub(sub);
+    setIsHistoryOpen(true);
+    try {
+      const res = await apiClient.get<any[]>(`/subscriptions/${sub.id}/history/`);
+      setHistoryData(res.data);
+    } catch {
+      toast.error("Failed to fetch price history.");
     }
   };
 
@@ -133,6 +191,12 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   <TableCell>{sub.monthly_cost?.toFixed(2) ?? "-"}</TableCell>
                   <TableCell>{sub.annual_cost?.toFixed(2) ?? "-"}</TableCell>
                   <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleUpdateOpen(sub)}>
+                      Update Price
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleHistoryOpen(sub)}>
+                      View History
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -168,6 +232,52 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isUpdateOpen} onOpenChange={setIsUpdateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Price</DialogTitle>
+            <DialogDescription>Modify cost and billing cycle.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateSubmit} className="space-y-4">
+            <Input
+              type="number"
+              step="0.01"
+              value={updateCost}
+              onChange={(e) => setUpdateCost(e.target.value)}
+            />
+            <Select value={updateCycle} onValueChange={(val) => setUpdateCycle(val as any)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select cycle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="annually">Annually</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button type="submit">Save</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Price History for {historySub?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {historyData.map((h) => (
+              <div key={h.id} className="flex justify-between">
+                <span>{format(parseISO(h.effective_date), "PPP")}</span>
+                <span className="inline-flex items-center">
+                  {parseFloat(h.cost).toFixed(2)}
+                  <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+                </span>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -129,7 +129,7 @@ function App() {
       return (
         <p>
           Currently on an annual plan (
-          {selectedSubForComparison.cost.toFixed(2)}{' '}
+          {Number(selectedSubForComparison.cost).toFixed(2)}{' '}
           <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
           /year).
         </p>
@@ -150,18 +150,18 @@ function App() {
 
     return (
       <p className="text-sm">
-        Annual cost if paying monthly: {calculatedAnnualCost.toFixed(2)}{' '}
+        Annual cost if paying monthly: {Number(calculatedAnnualCost).toFixed(2)}{' '}
         <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
         /year.
         {annualOptionCost && annualOptionCost > 0 ? (
           savings! > 0 ? (
-            <> If you switched to an annual plan at {annualOptionCost.toFixed(2)}{' '}
+            <> If you switched to an annual plan at {Number(annualOptionCost).toFixed(2)}{' '}
               <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
               /year, you could save {savings!.toFixed(2)}{' '}
               <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
               /year.</>
           ) : (
-            <> An annual option costs {annualOptionCost.toFixed(2)}{' '}
+            <> An annual option costs {Number(annualOptionCost).toFixed(2)}{' '}
               <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
               /year.</>
           )
