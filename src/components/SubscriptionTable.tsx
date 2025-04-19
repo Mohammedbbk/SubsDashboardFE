@@ -27,7 +27,6 @@ import {
 import { Trash2 } from "lucide-react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
