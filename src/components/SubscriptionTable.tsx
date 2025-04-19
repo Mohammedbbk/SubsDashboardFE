@@ -1,12 +1,20 @@
-import React, { useState } from 'react'; 
-import { Subscription } from '@/types';
-import apiClient from '@/lib/apiClient'; 
-import { toast } from "sonner"; 
-import { differenceInDays, isAfter, parseISO, format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { Subscription } from "@/types";
+import apiClient from "@/lib/apiClient";
+import { toast } from "sonner";
+import { differenceInDays, isAfter, parseISO, format } from "date-fns";
+import { cn } from "@/lib/utils";
 
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableCaption,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -16,18 +24,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from "lucide-react";
 
 interface SubscriptionTableProps {
   subscriptions: Subscription[];
   isLoading: boolean;
   error: string | null;
-  refreshData: () => void; 
+  refreshData: () => void;
   onRowSelect: (subscription: Subscription | null) => void;
   selectedSubscription: Subscription | null;
 }
 
-const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, isLoading, error, refreshData, onRowSelect, selectedSubscription }) => {
+const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
+  subscriptions,
+  isLoading,
+  error,
+  refreshData,
+  onRowSelect,
+  selectedSubscription,
+}) => {
   const [subToDelete, setSubToDelete] = useState<Subscription | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -42,13 +57,13 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, is
     try {
       await apiClient.delete(`/subscriptions/${subToDelete.id}/`);
       toast.success(`Subscription "${subToDelete.name}" deleted successfully!`);
-      refreshData(); 
-      setIsConfirmOpen(false); 
-      setSubToDelete(null); 
+      refreshData();
+      setIsConfirmOpen(false);
+      setSubToDelete(null);
     } catch (err: any) {
       console.error("Delete error:", err);
       toast.error("Failed to delete subscription. Please try again.");
-      setIsConfirmOpen(false); 
+      setIsConfirmOpen(false);
       setSubToDelete(null);
     }
   };
@@ -56,9 +71,11 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, is
   if (isLoading) {
     return <div>Loading subscriptions...</div>;
   }
-                
+
   if (error) {
-    return <div className="text-red-600">Error loading subscriptions: {error}</div>;
+    return (
+      <div className="text-red-600">Error loading subscriptions: {error}</div>
+    );
   }
 
   return (
@@ -79,41 +96,42 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, is
         <TableBody>
           {subscriptions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center"> 
+              <TableCell colSpan={7} className="text-center">
                 No subscriptions found. Add one!
               </TableCell>
             </TableRow>
           ) : (
-            subscriptions.map(sub => {
+            subscriptions.map((sub) => {
               const isSelected = selectedSubscription?.id === sub.id;
               const today = new Date();
               const renewalDate = parseISO(sub.renewal_date);
               let isRenewingSoon = false;
               if (renewalDate && !isNaN(renewalDate.getTime())) {
                 const daysUntilRenewal = differenceInDays(renewalDate, today);
-                isRenewingSoon = isAfter(renewalDate, today) && daysUntilRenewal < 7;
+                isRenewingSoon =
+                  isAfter(renewalDate, today) && daysUntilRenewal < 7;
               }
 
               return (
                 <TableRow
                   key={sub.id}
                   onClick={() => {
-                    if (sub.billing_cycle === 'monthly') {
+                    if (sub.billing_cycle === "monthly") {
                       onRowSelect(sub);
                     }
                   }}
                   className={cn(
-                    'cursor-pointer',
-                    isRenewingSoon && 'bg-yellow-100 dark:bg-yellow-900/30',
-                    isSelected && '[&>td]:!bg-muted/50',
+                    "cursor-pointer",
+                    isRenewingSoon && "bg-yellow-100 dark:bg-yellow-900/30",
+                    isSelected && "[&>td]:!bg-muted/50"
                   )}
                 >
                   <TableCell className="font-medium">{sub.name}</TableCell>
-                  <TableCell>{Number(sub.cost).toFixed(2)} SAR</TableCell> 
+                  <TableCell>{Number(sub.cost).toFixed(2)} SAR</TableCell>
                   <TableCell>{sub.billing_cycle}</TableCell>
-                  <TableCell>{format(renewalDate, 'PPP')}</TableCell>     
-                  <TableCell>{sub.monthly_cost?.toFixed(2) ?? '-'}</TableCell> 
-                  <TableCell>{sub.annual_cost?.toFixed(2) ?? '-'}</TableCell> 
+                  <TableCell>{format(renewalDate, "PPP")}</TableCell>
+                  <TableCell>{sub.monthly_cost?.toFixed(2) ?? "-"}</TableCell>
+                  <TableCell>{sub.annual_cost?.toFixed(2) ?? "-"}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
@@ -141,7 +159,9 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, is
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSubToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setSubToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
             <Button variant="destructive" onClick={handleDeleteConfirm}>
               Delete
             </Button>
