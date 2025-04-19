@@ -25,6 +25,8 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Calendar } from "@/components/ui/calendar";
+import SaudiRiyalIcon from "@/assets/SaudiRiyal.svg";
 
 interface DashboardSummary {
   total_monthly_spend: number;
@@ -71,6 +73,18 @@ function App() {
     fetchDashboardSummary();
   }, [fetchSubscriptions, fetchDashboardSummary]);
 
+  const renewalDatesForCalendar = useMemo(() => {
+    return subscriptions
+      .map(sub => {
+        try {
+          return parseISO(sub.renewal_date);
+        } catch {
+          return null;
+        }
+      })
+      .filter((date): date is Date => date !== null && !isNaN(date.getTime()));
+  }, [subscriptions]);
+
   const upcomingRenewals = useMemo(() => {
     const today = new Date();
     return subscriptions
@@ -101,6 +115,62 @@ function App() {
   const handleSelectSubscription = (subscription: Subscription | null) => {
     setSelectedSubForComparison(subscription);
   };
+
+  const comparisonContent = useMemo(() => {
+    if (!selectedSubForComparison) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          Select a monthly subscription from the table to see cost comparisons.
+        </p>
+      );
+    }
+
+    if (selectedSubForComparison.billing_cycle === 'annually') {
+      return (
+        <p>
+          Currently on an annual plan (
+          {selectedSubForComparison.cost.toFixed(2)}{' '}
+          <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+          /year).
+        </p>
+      );
+    }
+
+    const monthlyCost = selectedSubForComparison.monthly_cost;
+    const calculatedAnnualCost = selectedSubForComparison.annual_cost;
+    const annualOptionCost = selectedSubForComparison.annual_cost_option;
+
+    if (monthlyCost == null || calculatedAnnualCost == null) {
+      return <p>Cost information missing.</p>;
+    }
+
+    const savings = annualOptionCost && annualOptionCost > 0
+      ? calculatedAnnualCost - annualOptionCost
+      : null;
+
+    return (
+      <p className="text-sm">
+        Annual cost if paying monthly: {calculatedAnnualCost.toFixed(2)}{' '}
+        <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+        /year.
+        {annualOptionCost && annualOptionCost > 0 ? (
+          savings! > 0 ? (
+            <> If you switched to an annual plan at {annualOptionCost.toFixed(2)}{' '}
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+              /year, you could save {savings!.toFixed(2)}{' '}
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+              /year.</>
+          ) : (
+            <> An annual option costs {annualOptionCost.toFixed(2)}{' '}
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+              /year.</>
+          )
+        ) : (
+          <> No specific annual plan cost provided for comparison.</>
+        )}
+      </p>
+    );
+  }, [selectedSubForComparison]);
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
@@ -134,9 +204,29 @@ function App() {
             <CardTitle>Total Monthly Spend</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-bold">
-            {isSummaryLoading ? 'Loading...' :
-              dashboardSummary ? `${dashboardSummary.total_monthly_spend.toFixed(2)} SAR` : 'N/A'
-            }
+            {isSummaryLoading ? 'Loading...' : (
+              dashboardSummary ? (
+                <span className="inline-flex items-center">
+                  {dashboardSummary.total_monthly_spend.toFixed(2)}
+                  <img src={SaudiRiyalIcon} alt="SAR" className="w-6 h-6 ml-2" />
+                </span>
+              ) : 'N/A'
+            )}
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Renewal Calendar</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Calendar
+              mode="multiple"
+              modifiers={{ renewalDay: renewalDatesForCalendar }}
+              modifiersClassNames={{
+                renewalDay: 'bg-blue-200 dark:bg-blue-800/50 rounded-full',
+              }}
+              className="rounded-md border shadow"
+            />
           </CardContent>
         </Card>
         <Card>
@@ -151,7 +241,10 @@ function App() {
                 <div key={item.id} className="mb-2">
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-gray-500">
-                    {format(item.renewalDateObj, "PPP")} - {item.cost} SAR
+                    {format(item.renewalDateObj, "PPP")} - <span className="inline-flex items-center">
+                      {item.cost}
+                      <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 ml-1" />
+                    </span>
                   </p>
                 </div>
               ))
@@ -194,18 +287,7 @@ function App() {
             <CardTitle>Annual Cost Comparison</CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedSubForComparison &&
-            selectedSubForComparison.billing_cycle === "monthly" ? (
-              <p>
-                Annual cost for '{selectedSubForComparison.name}':{" "}
-                {selectedSubForComparison.annual_cost?.toFixed(2)} SAR
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Select a monthly subscription from the table to see its
-                calculated annual cost.
-              </p>
-            )}
+            {comparisonContent}
           </CardContent>
         </Card>
       </div>

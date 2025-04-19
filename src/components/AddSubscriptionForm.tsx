@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,13 +22,15 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   cost: z.coerce.number().positive({ message: "Cost must be positive" }),
   billing_cycle: z.enum(["monthly", "annually"]),
-  start_date: z.date(),
+  start_date: z.date({ required_error: "Start date is required."}),
+  annual_cost_option: z.coerce.number().positive().optional().or(z.literal('')),
 });
 
 export type AddSubscriptionFormValues = z.infer<typeof formSchema>;
@@ -48,10 +51,16 @@ export function AddSubscriptionForm({
       cost: 0,
       billing_cycle: "monthly",
       start_date: undefined as unknown as Date,
+      annual_cost_option: undefined,
     },
   });
 
   const onSubmit = async (values: AddSubscriptionFormValues) => {
+    if (!values.start_date || !isValid(values.start_date)) {
+        toast.error("Please provide a valid start date.");
+        return;
+    }
+    
     try {
       const formattedValues = {
         ...values,
@@ -62,6 +71,7 @@ export function AddSubscriptionForm({
 
       await apiClient.post("/subscriptions/", formattedValues);
       toast.success("Subscription added successfully!");
+      form.reset(); 
       onFormSuccess();
       refreshData();
     } catch (err: any) {
@@ -142,9 +152,35 @@ export function AddSubscriptionForm({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="annual_cost_option"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Annual Price (Optional)</FormLabel>
+              <FormControl>
+                {/* Use type="number" and step="0.01" for decimals */}
+                <Input
+                   type="number"
+                   step="0.01"
+                   placeholder="Cost if paid annually"
+                   {...field}
+                   value={field.value ?? ''} // Handle undefined value for input
+                   onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                 />
+              </FormControl>
+               <FormDescription>
+                 Enter if an annual payment option exists (for savings calculation).
+               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <Button type="submit">Add Subscription</Button>
-      </form>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Adding..." : "Add Subscription"}
+            </Button>      
+        </form>
     </Form>
   );
 }
