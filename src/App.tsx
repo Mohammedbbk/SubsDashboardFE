@@ -26,6 +26,10 @@ import {
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { ModeToggle } from "@/components/mode-toggle";
 
+interface DashboardSummary {
+  total_monthly_spend: number;
+}
+
 function App() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -34,7 +38,10 @@ function App() {
   const [selectedSubForComparison, setSelectedSubForComparison] =
     useState<Subscription | null>(null);
 
-  const WorkspaceSubscriptions = useCallback(async () => {
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState<boolean>(true);
+
+  const fetchSubscriptions = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -47,16 +54,23 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    WorkspaceSubscriptions();
-  }, [WorkspaceSubscriptions]);
+  const fetchDashboardSummary = useCallback(async () => {
+    setIsSummaryLoading(true);
+    try {
+      const response = await apiClient.get<DashboardSummary>("/dashboard-summary/");
+      setDashboardSummary(response.data);
+    } catch (err: any) {
+      setError(err.message || "Error fetching dashboard summary");
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  }, []);
 
-  const totalMonthlySpend = useMemo(() => {
-    return subscriptions.reduce(
-      (acc, sub) => acc + (Number(sub.monthly_cost) || 0),
-      0
-    );
-  }, [subscriptions]);
+  useEffect(() => {
+    fetchSubscriptions();
+    fetchDashboardSummary();
+  }, [fetchSubscriptions, fetchDashboardSummary]);
+
   const upcomingRenewals = useMemo(() => {
     const today = new Date();
     return subscriptions
@@ -105,7 +119,7 @@ function App() {
                 </DialogDescription>
               </DialogHeader>
               <AddSubscriptionForm
-                refreshData={WorkspaceSubscriptions}
+                refreshData={fetchSubscriptions}
                 onFormSuccess={() => setOpen(false)}
               />
             </DialogContent>
@@ -120,7 +134,9 @@ function App() {
             <CardTitle>Total Monthly Spend</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-bold">
-            {totalMonthlySpend.toFixed(2)} SAR
+            {isSummaryLoading ? 'Loading...' :
+              dashboardSummary ? `${dashboardSummary.total_monthly_spend.toFixed(2)} SAR` : 'N/A'
+            }
           </CardContent>
         </Card>
         <Card>
@@ -198,7 +214,7 @@ function App() {
         subscriptions={subscriptions}
         isLoading={isLoading}
         error={error}
-        refreshData={WorkspaceSubscriptions}
+        refreshData={fetchSubscriptions}
         onRowSelect={handleSelectSubscription}
         selectedSubscription={selectedSubForComparison}
       />
