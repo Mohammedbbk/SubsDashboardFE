@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { parseISO, isAfter, compareAsc, format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ModeToggle } from "@/components/mode-toggle";
 
 function App() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
@@ -66,83 +67,90 @@ function App() {
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Monthly Spend</CardTitle>
-        </CardHeader>
-        <CardContent className="text-2xl font-bold">
-          {totalMonthlySpend.toFixed(2)} SAR
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Renewals</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {upcomingRenewals.length === 0 ? (
-            <p>No upcoming renewals.</p>
-          ) : (
-            upcomingRenewals.map(item => (
-              <div key={item.id} className="mb-2">
-                <p className="font-medium">{item.name}</p>
-                <p className="text-sm text-gray-500">
-                  {format(item.renewalDateObj, 'PPP')} - {item.cost} SAR
-                </p>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Cost Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={{}}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} tickFormatter={value => `SAR ${value}`} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="monthlyCost" fill="var(--color-primary)" radius={4} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Annual Cost Comparison</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {selectedSubForComparison && selectedSubForComparison.billing_cycle === 'monthly' ? (
-            <p>
-              Annual cost for '{selectedSubForComparison.name}': {selectedSubForComparison.annual_cost?.toFixed(2)} SAR
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Select a monthly subscription from the table to see its calculated annual cost.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold">Subscription Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>Add New Subscription</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Subscription</DialogTitle>
+                <DialogDescription>
+                  Fill out the form below to add a new subscription.
+                </DialogDescription>
+              </DialogHeader>
+              <AddSubscriptionForm refreshData={WorkspaceSubscriptions} onFormSuccess={() => setOpen(false)} />
+            </DialogContent>
+          </Dialog>
+          <ModeToggle />
+        </div>
+      </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button>Add New Subscription</Button>
-        </DialogTrigger>
-
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Subscription</DialogTitle>
-            <DialogDescription>
-              Fill out the form below to add a new subscription.
-            </DialogDescription>
-          </DialogHeader>
-          <AddSubscriptionForm refreshData={WorkspaceSubscriptions} onFormSuccess={() => setOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Monthly Spend</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            {totalMonthlySpend.toFixed(2)} SAR
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Renewals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingRenewals.length === 0 ? (
+              <p>No upcoming renewals.</p>
+            ) : (
+              upcomingRenewals.map(item => (
+                <div key={item.id} className="mb-2">
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {format(item.renewalDateObj, 'PPP')} - {item.cost} SAR
+                  </p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Cost Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={{}}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} tickFormatter={value => `SAR ${value}`} />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="monthlyCost" fill="var(--color-primary)" radius={4} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Annual Cost Comparison</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {selectedSubForComparison && selectedSubForComparison.billing_cycle === 'monthly' ? (
+              <p>
+                Annual cost for '{selectedSubForComparison.name}': {selectedSubForComparison.annual_cost?.toFixed(2)} SAR
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select a monthly subscription from the table to see its calculated annual cost.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <SubscriptionTable
         subscriptions={subscriptions}
@@ -152,7 +160,7 @@ function App() {
         onRowSelect={handleSelectSubscription}
         selectedSubscription={selectedSubForComparison}
       />
-    </>
+    </div>
   )
 }
 

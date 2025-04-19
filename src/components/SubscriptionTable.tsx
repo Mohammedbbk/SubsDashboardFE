@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Subscription } from '@/types';
 import apiClient from '@/lib/apiClient'; 
 import { toast } from "sonner"; 
-import { differenceInDays, isAfter, parseISO } from 'date-fns';
+import { differenceInDays, isAfter, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from '@/components/ui/table';
@@ -79,7 +79,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, is
         <TableBody>
           {subscriptions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center"> {/* Adjusted colSpan */}
+              <TableCell colSpan={7} className="text-center"> 
                 No subscriptions found. Add one!
               </TableCell>
             </TableRow>
@@ -109,11 +109,11 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ subscriptions, is
                   )}
                 >
                   <TableCell className="font-medium">{sub.name}</TableCell>
-                  <TableCell>{sub.cost}</TableCell> {/* TODO: Format currency */}
+                  <TableCell>{Number(sub.cost).toFixed(2)} SAR</TableCell> 
                   <TableCell>{sub.billing_cycle}</TableCell>
-                  <TableCell>{sub.renewal_date}</TableCell> {/* TODO: Format date */}
-                  <TableCell>{sub.monthly_cost?.toFixed(2) ?? '-'}</TableCell> {/* Format to 2 decimals */}
-                  <TableCell>{sub.annual_cost?.toFixed(2) ?? '-'}</TableCell> {/* Format to 2 decimals */}
+                  <TableCell>{format(renewalDate, 'PPP')}</TableCell>     
+                  <TableCell>{sub.monthly_cost?.toFixed(2) ?? '-'}</TableCell> 
+                  <TableCell>{sub.annual_cost?.toFixed(2) ?? '-'}</TableCell> 
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
