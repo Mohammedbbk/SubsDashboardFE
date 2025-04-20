@@ -223,9 +223,10 @@ function App() {
               mode="multiple"
               modifiers={{ renewalDay: renewalDatesForCalendar }}
               modifiersClassNames={{
-                renewalDay: 'bg-blue-200 dark:bg-blue-800/50 rounded-full',
+                renewalDay: "bg-primary text-primary-foreground rounded-full",
               }}
-              className="rounded-md border shadow"
+              disabled
+              className="pointer-events-none rounded-md border shadow"
             />
           </CardContent>
         </Card>
