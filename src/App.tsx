@@ -22,6 +22,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Analytics } from "@vercel/analytics/react"
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Calendar } from "@/components/ui/calendar";
 import SaudiRiyalIcon from "@/assets/SaudiRiyal.svg";
@@ -350,6 +351,7 @@ function App() {
         onRowSelect={handleSelectSubscription}
         selectedSubscription={selectedSubForComparison}
       />
+      <Analytics />
     </div>
   );
 }
