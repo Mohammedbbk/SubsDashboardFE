@@ -144,9 +144,18 @@ export function AddSubscriptionForm({
           name="start_date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Start Date</FormLabel>
+              <FormLabel>Start Date (Test)</FormLabel>
               <FormControl>
-                <DatePicker value={field.value} onChange={field.onChange} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    alert('Date Picker Trigger Test Clicked!');
+                    console.log('Date Picker Trigger Test Clicked!');
+                  }}
+                >
+                  Test Date Trigger Click
+                </Button>
               </FormControl>
               <FormMessage />
             </FormItem>
