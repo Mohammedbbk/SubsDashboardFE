@@ -67,7 +67,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   const [updateCycle, setUpdateCycle] = useState<"monthly" | "annually">("monthly");
   const [historySub, setHistorySub] = useState<Subscription | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [historyData, setHistoryData] = useState<Array<{ date: string; cost: number }>>([]);
 
   const handleDeleteClick = (subscription: Subscription) => {
     setSubToDelete(subscription);
@@ -79,13 +79,18 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
 
     try {
       await apiClient.delete(`/subscriptions/${subToDelete.id}/`);
-      toast.success(`Subscription "${subToDelete.name}" deleted successfully!`);
+      toast.success(`Subscription "${subToDelete?.name}" deleted successfully!`);
       refreshData();
       setIsConfirmOpen(false);
       setSubToDelete(null);
-    } catch (err: any) {
-      console.error("Delete error:", err);
-      toast.error("Failed to delete subscription. Please try again.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Delete error:", err);
+        toast.error(err.message || "Failed to delete subscription. Please try again.");
+      } else {
+        console.error("Delete error:", err);
+        toast.error("Failed to delete subscription. Please try again.");
+      }
       setIsConfirmOpen(false);
       setSubToDelete(null);
     }
@@ -109,8 +114,12 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
       toast.success("Price updated successfully!");
       refreshData();
       setIsUpdateOpen(false);
-    } catch (err: any) {
-      toast.error(err.response?.data || "Failed to update price.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message || "Failed to update price.");
+      } else {
+        toast.error("Failed to update price.");
+      }
     }
   };
 
@@ -118,10 +127,16 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
     setHistorySub(sub);
     setIsHistoryOpen(true);
     try {
-      const res = await apiClient.get<any[]>(`/subscriptions/${sub.id}/history/`);
+      const res = await apiClient.get<Array<{ date: string; cost: number }>>(`/subscriptions/${sub.id}/history/`);
       setHistoryData(res.data);
-    } catch {
-      toast.error("Failed to fetch price history.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("History fetching error:", err);
+        toast.error(err.message);
+      } else {
+        console.error("History fetching error:", err);
+        toast.error("Failed to fetch price history.");
+      }
     }
   };
 
@@ -245,7 +260,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
               value={updateCost}
               onChange={(e) => setUpdateCost(e.target.value)}
             />
-            <Select value={updateCycle} onValueChange={(val) => setUpdateCycle(val as any)}>
+            <Select value={updateCycle} onValueChange={(val: "monthly" | "annually") => setUpdateCycle(val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select cycle" />
               </SelectTrigger>
@@ -266,10 +281,10 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
           </DialogHeader>
           <div className="space-y-2">
             {historyData.map((h) => (
-              <div key={h.id} className="flex justify-between">
-                <span>{format(parseISO(h.effective_date), "PPP")}</span>
+              <div key={h.date} className="flex justify-between">
+                <span>{format(parseISO(h.date), "PPP")}</span>
                 <span className="inline-flex items-center">
-                  {parseFloat(h.cost).toFixed(2)}
+                  {h.cost.toFixed(2)}
                   <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
                 </span>
               </div>

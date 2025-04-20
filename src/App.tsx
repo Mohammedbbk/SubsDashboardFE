@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, Suspense} from "react";
 import "./App.css";
 import SubscriptionTable from "@/components/SubscriptionTable";
 import {
@@ -10,7 +10,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AddSubscriptionForm } from "@/components/AddSubscriptionForm";
 import { Subscription } from "@/types";
 import apiClient from "@/lib/apiClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -24,9 +23,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { ModeToggle } from "@/components/mode-toggle";
 import { Calendar } from "@/components/ui/calendar";
 import SaudiRiyalIcon from "@/assets/SaudiRiyal.svg";
+const AddSubscriptionForm = React.lazy(() => import('@/components/AddSubscriptionForm').then(module => ({ default: module.AddSubscriptionForm })));
+const ModeToggle = React.lazy(() => import('@/components/mode-toggle').then(module => ({ default: module.ModeToggle })));
 
 interface DashboardSummary {
   total_monthly_spend: number;
@@ -49,8 +49,12 @@ function App() {
     try {
       const response = await apiClient.get<Subscription[]>("/subscriptions/");
       setSubscriptions(response.data);
-    } catch (err: any) {
-      setError(err.message || "Error fetching subscriptions");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error fetching subscriptions");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -61,8 +65,12 @@ function App() {
     try {
       const response = await apiClient.get<DashboardSummary>("/dashboard-summary/");
       setDashboardSummary(response.data);
-    } catch (err: any) {
-      setError(err.message || "Error fetching dashboard summary");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error fetching dashboard summary");
+      }
     } finally {
       setIsSummaryLoading(false);
     }
@@ -182,19 +190,23 @@ function App() {
               <Button>Add New Subscription</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Subscription</DialogTitle>
-                <DialogDescription>
-                  Fill out the form below to add a new subscription.
-                </DialogDescription>
-              </DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Add New Subscription</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to add a new subscription.
+              </DialogDescription>
+            </DialogHeader>
+            <Suspense fallback={<div>Loading form...</div>}>
               <AddSubscriptionForm
                 refreshData={fetchSubscriptions}
                 onFormSuccess={() => setOpen(false)}
               />
-            </DialogContent>
+            </Suspense>
+          </DialogContent>
           </Dialog>
-          <ModeToggle />
+          <Suspense fallback={<Button variant="outline" size="icon" disabled aria-label="Loading theme toggle"/>}>
+         <ModeToggle />
+       </Suspense>
         </div>
       </div>
 
@@ -225,8 +237,7 @@ function App() {
               modifiersClassNames={{
                 renewalDay: "bg-primary text-primary-foreground rounded-full",
               }}
-              disabled
-              className="pointer-events-none rounded-md border shadow"
+              className="rounded-md border shadow"
             />
           </CardContent>
         </Card>

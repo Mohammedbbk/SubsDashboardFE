@@ -74,15 +74,14 @@ export function AddSubscriptionForm({
       form.reset(); 
       onFormSuccess();
       refreshData();
-    } catch (err: any) {
-      console.error("API Error Response:", err.response?.data);
-      toast.error(
-        err.response?.data?.detail ||
-          Object.values(err.response?.data || {})
-            .flat()
-            .join(" ") ||
-          "Failed to add subscription. Please try again."
-      );
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("API Error Response:", err);
+        toast.error(err.message || "Failed to add subscription. Please try again.");
+      } else {
+        console.error("API Error Response:", err);
+        toast.error("Failed to add subscription. Please try again.");
+      }
     }
   };
 

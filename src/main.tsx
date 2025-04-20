@@ -5,7 +5,15 @@ import App from "./App.tsx";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-createRoot(document.getElementById("root")!).render(
+const appRoot = document.getElementById("root");
+
+if (!appRoot) {
+  throw new Error("Root element not found!");
+}
+
+const root = createRoot(appRoot);
+
+root.render(
   <StrictMode>
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <App />

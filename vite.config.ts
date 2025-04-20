@@ -13,4 +13,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: { 
+    rollupOptions: {
+      preserveEntrySignatures: 'strict' 
+    }
+  },
+  optimizeDeps: {
+     include: [
+       '@radix-ui/react-popover',
+       '@radix-ui/react-dropdown-menu',
+       '@radix-ui/react-dialog',
+     ],
+   }
 })
