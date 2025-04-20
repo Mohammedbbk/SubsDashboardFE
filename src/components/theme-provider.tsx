@@ -28,7 +28,6 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
 
-  // on mount, load saved theme from localStorage (avoid SSR/localStorage issues)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = localStorage.getItem(storageKey) as Theme | null;

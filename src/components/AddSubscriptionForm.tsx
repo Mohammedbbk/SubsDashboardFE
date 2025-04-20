@@ -159,13 +159,12 @@ export function AddSubscriptionForm({
             <FormItem>
               <FormLabel>Annual Price (Optional)</FormLabel>
               <FormControl>
-                {/* Use type="number" and step="0.01" for decimals */}
                 <Input
                    type="number"
                    step="0.01"
                    placeholder="Cost if paid annually"
                    {...field}
-                   value={field.value ?? ''} // Handle undefined value for input
+                   value={field.value ?? ''} 
                    onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
                  />
               </FormControl>
