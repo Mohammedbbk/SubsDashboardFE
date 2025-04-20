@@ -67,7 +67,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   const [updateCycle, setUpdateCycle] = useState<"monthly" | "annually">("monthly");
   const [historySub, setHistorySub] = useState<Subscription | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [historyData, setHistoryData] = useState<Array<{ date: string; cost: number }>>([]);
+  const [historyData, setHistoryData] = useState<Array<{ effective_date: string; cost: number; id?: number }>>([]);
 
   const handleDeleteClick = (subscription: Subscription) => {
     setSubToDelete(subscription);
@@ -127,7 +127,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
     setHistorySub(sub);
     setIsHistoryOpen(true);
     try {
-      const res = await apiClient.get<Array<{ date: string; cost: number }>>(`/subscriptions/${sub.id}/history/`);
+      const res = await apiClient.get<Array<{ effective_date: string; cost: number; id?: number }>>(`/subscriptions/${sub.id}/history/`);
       setHistoryData(res.data);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -281,8 +281,8 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
           </DialogHeader>
           <div className="space-y-2">
             {historyData.map((h) => (
-              <div key={h.date} className="flex justify-between">
-                <span>{format(parseISO(h.date), "PPP")}</span>
+              <div key={h.effective_date} className="flex justify-between">
+                <span>{format(parseISO(h.effective_date), "PPP")}</span>
                 <span className="inline-flex items-center">
                   {h.cost.toFixed(2)}
                   <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
@@ -294,6 +294,6 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
       </Dialog>
     </>
   );
-};
+};  
 
 export default SubscriptionTable;
