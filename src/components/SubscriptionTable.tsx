@@ -323,7 +323,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   <span>{formattedDate}</span>
                   <span className="inline-flex items-center font-medium">
                     {formattedCost}
-                    <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+                    <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 filter dark:invert" />
                   </span>
                 </div>
               );

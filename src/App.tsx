@@ -170,7 +170,7 @@ function App() {
         <p>
           Currently on an annual plan (
           {typeof selectedSubForComparison.cost === 'number' ? Number(selectedSubForComparison.cost).toFixed(2) : 'N/A'}{' '}
-          <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+          <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 filter dark:invert" />
           /year).
         </p>
       );
@@ -197,18 +197,18 @@ function App() {
     return (
       <p className="text-sm">
         Annual cost if paying monthly: {Number(calculatedAnnualCost).toFixed(2)}{' '}
-        <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+        <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 filter dark:invert" />
         /year.
         {isAnnualOptionCostValid ? (
           isSavingsValid && savings > 0 ? (
             <> If you switched to an annual plan at {Number(annualOptionCost).toFixed(2)}{' '}
-              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 filter dark:invert" />
               /year, you could save {savings.toFixed(2)}{' '}
-              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 filter dark:invert" />
               /year.</>
           ) : (
             <> An annual option costs {Number(annualOptionCost).toFixed(2)}{' '}
-              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 filter dark:invert" />
               /year.</>
           )
         ) : (
@@ -258,7 +258,7 @@ function App() {
               dashboardSummary && typeof dashboardSummary.total_monthly_spend === 'number' ? (
                 <span className="inline-flex items-center">
                   {dashboardSummary.total_monthly_spend.toFixed(2)}
-                  <img src={SaudiRiyalIcon} alt="SAR" className="w-6 h-6 ml-2 dark:invert" />
+                  <img src={SaudiRiyalIcon} alt="SAR" className="w-6 h-6 ml-2 filter dark:invert" />
                 </span>
               ) : 'N/A'
             )}
@@ -293,7 +293,7 @@ function App() {
                   <p className="text-sm text-gray-500">
                     {format(item.renewalDateObj, "PPP")} - <span className="inline-flex items-center">
                       {item.cost}
-                      <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 ml-1 dark:invert" />
+                      <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 ml-1 filter dark:invert" />
                     </span>
                   </p>
                 </div>
