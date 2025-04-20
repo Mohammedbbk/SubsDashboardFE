@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-// import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -142,20 +142,11 @@ export function AddSubscriptionForm({
         <FormField
           control={form.control}
           name="start_date"
-          render={({ field: _field }) => (
+          render={({ field }) => (
             <FormItem>
-              <FormLabel>Start Date (Test)</FormLabel>
+              <FormLabel>Start Date</FormLabel>
               <FormControl>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    alert('Date Picker Trigger Test Clicked!');
-                    console.log('Date Picker Trigger Test Clicked!');
-                  }}
-                >
-                  Test Date Trigger Click
-                </Button>
+                <DatePicker value={field.value} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
