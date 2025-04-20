@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
+// import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -142,7 +142,7 @@ export function AddSubscriptionForm({
         <FormField
           control={form.control}
           name="start_date"
-          render={({ field }) => (
+          render={({ field: _field }) => (
             <FormItem>
               <FormLabel>Start Date (Test)</FormLabel>
               <FormControl>
