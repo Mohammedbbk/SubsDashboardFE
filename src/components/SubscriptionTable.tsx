@@ -67,7 +67,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   const [updateCycle, setUpdateCycle] = useState<"monthly" | "annually">("monthly");
   const [historySub, setHistorySub] = useState<Subscription | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [historyData, setHistoryData] = useState<Array<{ effective_date: string; cost: number; id?: number }>>([]);
+  const [historyData, setHistoryData] = useState<Array<{ effective_date: string; cost: number | string; id?: number }>>([]); 
 
   const handleDeleteClick = (subscription: Subscription) => {
     setSubToDelete(subscription);
@@ -126,13 +126,14 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   const handleHistoryOpen = async (sub: Subscription) => {
     setHistorySub(sub);
     setIsHistoryOpen(true);
+    setHistoryData([]); 
     try {
-      const res = await apiClient.get<Array<{ effective_date: string; cost: number; id?: number }>>(`/subscriptions/${sub.id}/history/`);
+      const res = await apiClient.get<Array<{ effective_date: string; cost: number | string; id?: number }>>(`/subscriptions/${sub.id}/history/`);
       setHistoryData(res.data);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("History fetching error:", err);
-        toast.error(err.message);
+        toast.error(err.message || "Failed to fetch price history.");
       } else {
         console.error("History fetching error:", err);
         toast.error("Failed to fetch price history.");
@@ -176,7 +177,17 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
             subscriptions.map((sub) => {
               const isSelected = selectedSubscription?.id === sub.id;
               const today = new Date();
-              const renewalDate = parseISO(sub.renewal_date);
+              let renewalDate: Date | null = null;
+              let formattedRenewalDate = "-";
+              try {
+                const parsed = parseISO(sub.renewal_date);
+                if (!isNaN(parsed.getTime())) {
+                  renewalDate = parsed;
+                  formattedRenewalDate = format(renewalDate, "PPP");
+                }
+              } catch {
+              }
+
               let isRenewingSoon = false;
               if (renewalDate && !isNaN(renewalDate.getTime())) {
                 const daysUntilRenewal = differenceInDays(renewalDate, today);
@@ -190,10 +201,12 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   onClick={() => {
                     if (sub.billing_cycle === "monthly") {
                       onRowSelect(sub);
+                    } else {
+                      onRowSelect(null); 
                     }
                   }}
                   className={cn(
-                    "cursor-pointer",
+                    sub.billing_cycle === "monthly" ? "cursor-pointer" : "cursor-default",
                     isRenewingSoon && "bg-yellow-100 dark:bg-yellow-900/30",
                     isSelected && "[&>td]:!bg-muted/50"
                   )}
@@ -201,22 +214,22 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   <TableCell className="font-medium">{sub.name}</TableCell>
                   <TableCell>{Number(sub.cost).toFixed(2)} SAR</TableCell>
                   <TableCell>{sub.billing_cycle}</TableCell>
-                  <TableCell>{format(renewalDate, "PPP")}</TableCell>
+                  <TableCell>{formattedRenewalDate}</TableCell>
                   <TableCell>{sub.monthly_cost?.toFixed(2) ?? "-"}</TableCell>
                   <TableCell>{sub.annual_cost?.toFixed(2) ?? "-"}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => handleUpdateOpen(sub)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleUpdateOpen(sub); }}>
                       Update Price
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleHistoryOpen(sub)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleHistoryOpen(sub); }}>
                       View History
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteClick(sub)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteClick(sub); }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-1" />
                       Delete
                     </Button>
                   </TableCell>
@@ -257,10 +270,12 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
             <Input
               type="number"
               step="0.01"
+              min="0"
               value={updateCost}
               onChange={(e) => setUpdateCost(e.target.value)}
+              required
             />
-            <Select value={updateCycle} onValueChange={(val: "monthly" | "annually") => setUpdateCycle(val)}>
+            <Select value={updateCycle} onValueChange={(val: "monthly" | "annually") => setUpdateCycle(val)} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select cycle" />
               </SelectTrigger>
@@ -269,7 +284,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                 <SelectItem value="annually">Annually</SelectItem>
               </SelectContent>
             </Select>
-            <Button type="submit">Save</Button>
+            <Button type="submit">Save Changes</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -279,21 +294,41 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
           <DialogHeader>
             <DialogTitle>Price History for {historySub?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            {historyData.map((h) => (
-              <div key={h.effective_date} className="flex justify-between">
-                <span>{format(parseISO(h.effective_date), "PPP")}</span>
-                <span className="inline-flex items-center">
-                  {h.cost.toFixed(2)}
-                  <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
-                </span>
-              </div>
-            ))}
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+            {historyData.length === 0 && <p className="text-sm text-muted-foreground">No price history found.</p>}
+            {historyData.map((h, index) => {
+              const itemKey = h.id ?? h.effective_date ?? `history-${index}`;
+
+              if (h?.effective_date == null || h.effective_date === "" || h?.cost == null) {
+                 return null;
+              }
+
+              let formattedDate = "Invalid Date";
+              try {
+                const parsed = parseISO(h.effective_date);
+                if (!isNaN(parsed.getTime())) {
+                  formattedDate = format(parsed, "PPP");
+                }
+              } catch (e) { }
+
+              const costAsNumber = Number(h.cost);
+              const formattedCost = !isNaN(costAsNumber) ? costAsNumber.toFixed(2) : "N/A";
+
+              return (
+                <div key={itemKey} className="flex justify-between text-sm">
+                  <span>{formattedDate}</span>
+                  <span className="inline-flex items-center font-medium">
+                    {formattedCost}
+                    <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
     </>
   );
-};  
+};
 
 export default SubscriptionTable;
