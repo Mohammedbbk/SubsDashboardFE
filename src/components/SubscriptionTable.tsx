@@ -167,10 +167,14 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {subscriptions.length === 0 ? (
+          {!Array.isArray(subscriptions) || subscriptions.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center">
-                No subscriptions found. Add one!
+                {isLoading
+                  ? "Loading..."
+                  : error
+                  ? `Error: ${error}`
+                  : "No subscriptions found. Add one!"}
               </TableCell>
             </TableRow>
           ) : (
@@ -319,7 +323,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   <span>{formattedDate}</span>
                   <span className="inline-flex items-center font-medium">
                     {formattedCost}
-                    <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+                    <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
                   </span>
                 </div>
               );

@@ -47,14 +47,35 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get<Subscription[]>("/subscriptions/");
-      setSubscriptions(response.data);
+      const response = await apiClient.get<any>("/subscriptions/");
+      console.log("API Response for /subscriptions/:", response.data);
+      let subsArray: Subscription[] = [];
+      if (Array.isArray(response.data)) {
+        subsArray = response.data;
+      } else if (
+        response.data &&
+        typeof response.data === 'object' &&
+        Array.isArray(response.data.results)
+      ) {
+        subsArray = response.data.results;
+      } else {
+        console.error(
+          "Received unexpected data structure for subscriptions:",
+          response.data
+        );
+        setError("Received unexpected data format for subscriptions.");
+      }
+      setSubscriptions(subsArray);
     } catch (err: unknown) {
+      console.error("Error fetching subscriptions:", err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Error fetching subscriptions");
+        setError(
+          "An unknown error occurred while fetching subscriptions."
+        );
       }
+      setSubscriptions([]);
     } finally {
       setIsLoading(false);
     }
@@ -82,6 +103,9 @@ function App() {
   }, [fetchSubscriptions, fetchDashboardSummary]);
 
   const renewalDatesForCalendar = useMemo(() => {
+    if (!Array.isArray(subscriptions)) {
+      return [];
+    }
     return subscriptions
       .map(sub => {
         try {
@@ -90,10 +114,15 @@ function App() {
           return null;
         }
       })
-      .filter((date): date is Date => date !== null && !isNaN(date.getTime()));
+      .filter(
+        (date): date is Date => date !== null && !isNaN(date.getTime())
+      );
   }, [subscriptions]);
 
   const upcomingRenewals = useMemo(() => {
+    if (!Array.isArray(subscriptions)) {
+      return [];
+    }
     const today = new Date();
     return subscriptions
       .map((sub) => {
@@ -109,6 +138,9 @@ function App() {
       .slice(0, 5);
   }, [subscriptions]);
   const chartData = useMemo(() => {
+    if (!Array.isArray(subscriptions)) {
+      return [];
+    }
     const grouped: Record<string, number> = {};
     subscriptions.forEach((sub) => {
       const cost = Number(sub.monthly_cost) || 0;
@@ -137,8 +169,8 @@ function App() {
       return (
         <p>
           Currently on an annual plan (
-          {Number(selectedSubForComparison.cost).toFixed(2)}{' '}
-          <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+          {typeof selectedSubForComparison.cost === 'number' ? Number(selectedSubForComparison.cost).toFixed(2) : 'N/A'}{' '}
+          <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
           /year).
         </p>
       );
@@ -148,29 +180,35 @@ function App() {
     const calculatedAnnualCost = selectedSubForComparison.annual_cost;
     const annualOptionCost = selectedSubForComparison.annual_cost_option;
 
-    if (monthlyCost == null || calculatedAnnualCost == null) {
-      return <p>Cost information missing.</p>;
+    // Ensure costs are numbers before proceeding
+    const isMonthlyCostValid = typeof monthlyCost === 'number';
+    const isCalculatedAnnualCostValid = typeof calculatedAnnualCost === 'number';
+    const isAnnualOptionCostValid = typeof annualOptionCost === 'number';
+
+    if (!isMonthlyCostValid || !isCalculatedAnnualCostValid) {
+      return <p className="text-sm text-muted-foreground">Cost information missing or invalid.</p>;
     }
 
-    const savings = annualOptionCost && annualOptionCost > 0
+    const savings = isAnnualOptionCostValid
       ? calculatedAnnualCost - annualOptionCost
       : null;
+    const isSavingsValid = typeof savings === 'number';
 
     return (
       <p className="text-sm">
         Annual cost if paying monthly: {Number(calculatedAnnualCost).toFixed(2)}{' '}
-        <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+        <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
         /year.
-        {annualOptionCost && annualOptionCost > 0 ? (
-          savings! > 0 ? (
+        {isAnnualOptionCostValid ? (
+          isSavingsValid && savings > 0 ? (
             <> If you switched to an annual plan at {Number(annualOptionCost).toFixed(2)}{' '}
-              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
-              /year, you could save {savings!.toFixed(2)}{' '}
-              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
+              /year, you could save {savings.toFixed(2)}{' '}
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
               /year.</>
           ) : (
             <> An annual option costs {Number(annualOptionCost).toFixed(2)}{' '}
-              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1" />
+              <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 inline ml-1 dark:invert" />
               /year.</>
           )
         ) : (
@@ -217,10 +255,10 @@ function App() {
           </CardHeader>
           <CardContent className="text-2xl font-bold">
             {isSummaryLoading ? 'Loading...' : (
-              dashboardSummary ? (
+              dashboardSummary && typeof dashboardSummary.total_monthly_spend === 'number' ? (
                 <span className="inline-flex items-center">
                   {dashboardSummary.total_monthly_spend.toFixed(2)}
-                  <img src={SaudiRiyalIcon} alt="SAR" className="w-6 h-6 ml-2" />
+                  <img src={SaudiRiyalIcon} alt="SAR" className="w-6 h-6 ml-2 dark:invert" />
                 </span>
               ) : 'N/A'
             )}
@@ -255,7 +293,7 @@ function App() {
                   <p className="text-sm text-gray-500">
                     {format(item.renewalDateObj, "PPP")} - <span className="inline-flex items-center">
                       {item.cost}
-                      <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 ml-1" />
+                      <img src={SaudiRiyalIcon} alt="SAR" className="w-4 h-4 ml-1 dark:invert" />
                     </span>
                   </p>
                 </div>

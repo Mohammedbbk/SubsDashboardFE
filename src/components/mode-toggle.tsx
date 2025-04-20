@@ -6,7 +6,6 @@ export function ModeToggle() {
   const { theme, setTheme } = useTheme();
   const handleTestClick = () => {
     const newTheme = theme === "light" ? "dark" : "light";
-    console.log("Setting theme to:", newTheme); 
     setTheme(newTheme);
   };
 
